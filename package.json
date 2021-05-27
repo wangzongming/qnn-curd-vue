@@ -1,0 +1,27 @@
+{
+  "name": "qnn-curd-vue",
+  "version": "1.0.0",
+  "description": "An all-around add, delete, check and change front-end VUE components",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wangzongming/qnn-curd-vue.git"
+  },
+  "keywords": [
+    "qnn-curd-vue",
+    "vue",
+    "qnn",
+    "curd",
+    "qnn-curd",
+    "vue-curd"
+  ],
+  "author": "jonas",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wangzongming/qnn-curd-vue/issues"
+  },
+  "homepage": "https://github.com/wangzongming/qnn-curd-vue#readme"
+}
