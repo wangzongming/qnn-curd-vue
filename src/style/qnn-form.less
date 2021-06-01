@@ -1,0 +1,76 @@
+@gray: rgba(77, 86, 99, 0.651);
+@gray2: rgb(84, 92, 100);
+@block: rgba(45, 58, 75, 1);
+@white: #fff;
+@blue: #409eff;
+@qing: #40c9c6;
+@green: #67C23A;
+@red: #F56C6C;
+@yellow: #E6A23C;
+@violet: rgb(182, 162, 222);
+@bg: #f0efef;
+
+
+.t-blue {
+    color: @blue
+}
+
+.t-qing {
+    color: @qing
+}
+
+.t-green {
+    color: @green
+}
+
+.t-red {
+    color: @red
+}
+
+.t-yellow {
+    color: @yellow
+}
+
+.t-violet {
+    color: @violet
+}
+
+.qnn-form{
+    height: 100%;
+    // border: 1px solid red;
+    .qnn-form-upload{
+        .qnn-form-upload-item{
+            display: flex;
+            border-bottom: 1px dashed fade(@gray2, 20);
+            .left{
+                box-sizing: border-box; 
+                flex: 1;
+                line-height: 34px;
+            }
+            .right{
+                box-sizing: border-box; 
+                flex-basis: 100px; 
+                text-align: right;
+                font-size: 18px;
+                .historyBtn{ 
+                    color: @blue;
+                    margin-right: 12px;
+                    cursor: pointer;
+                }
+                .delBtn{
+                    color: @red;
+                    cursor: pointer;
+                }
+            }
+        }
+        
+    }
+
+    .btns{ 
+        padding: 6px 0px;
+        background-color:fade( @gray, 5);
+        padding-left: 100px;
+        margin-bottom: 12px;
+    }
+}
+
