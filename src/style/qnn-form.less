@@ -37,7 +37,13 @@
 
 .qnn-form{
     height: 100%;
+    width: 100%;
     // border: 1px solid red;
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+
     .qnn-form-upload{
         .qnn-form-upload-item{
             display: flex;
@@ -68,9 +74,33 @@
 
     .btns{ 
         padding: 6px 0px;
+        box-sizing: border-box;
         background-color:fade( @gray, 5);
         padding-left: 100px;
         margin-bottom: 12px;
+        flex-basis: 32px;
+    }
+    .top-btns{ 
+        width:100%; 
+        box-shadow: 0px 5px 10px fade(@gray,14);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .right{
+            padding-right: 8px;
+        }
+    }
+
+    .qnn-form-ele-form{ 
+        flex: 1; 
+        overflow: hidden; 
+        // border: 1px solid rgb(43, 255, 0);
+        .qnn-form-content{
+            height: 100%;
+            overflow-y: auto; 
+            padding-right: 8px;
+        }
     }
 }
 

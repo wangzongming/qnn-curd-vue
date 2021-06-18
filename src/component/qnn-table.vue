@@ -2,7 +2,7 @@
     <div class="qnn-table">
          <!-- 检索表单视图 -->
         <div v-if="qnnTableSearchFields && qnnTableSearchFields.length" class="search-container"> 
-          <QnnForm 
+          <qnn-form 
             :formFields="qnnTableSearchFields"
             :curClickBtn="{}"
             :loadingsBtn="$props.loadingsBtn"
@@ -12,9 +12,13 @@
             ref="searchRef"
           /> 
           <div class="query">
-            <el-button type="default" icon="el-icon-refresh-right" :size="'small'" @click="searchReset">重置</el-button>
-            <el-button type="primary" icon="el-icon-search"  :size="'small'" @click="refresh">查询</el-button>
-            <el-button v-if="qnnTableSearchFields.length > 3" type="text" :size="'mini'" style="margin-left:0px" @click="expendSearch" :icon="searchIsExpend ? 'el-icon-arrow-up' : 'el-icon-arrow-down'">更多</el-button>
+            <div>
+              <el-button class="button" type="default" :size="'small'" @click="searchReset"><img class="icon" src="../imgs/reset.png" alt=""><span>重置</span></el-button>
+              <el-button class="button" type="default" :size="'small'" @click="refresh"><img class="icon" src="../imgs/query.png" alt=""><span>查询</span></el-button>
+            </div>
+            <div>
+              <el-button v-if="qnnTableSearchFields.length > 3" type="text" :size="'mini'" style="margin-left:0px" @click="expendSearch" :icon="searchIsExpend ? 'el-icon-caret-top' : 'el-icon-caret-bottom'">更多筛选</el-button>
+            </div> 
           </div> 
         </div>  
 
@@ -22,10 +26,11 @@
         <el-row style="paddingBottom:12px" v-if="qnnTableActionBtns && qnnTableActionBtns.length"> 
             <el-button v-for=" (btnConfig, index) in qnnTableActionBtns" 
               :key="index" 
-              :loading="$props.loadingsBtn.includes(btnConfig.field)" 
+              :loading="$props.loadingsBtn && $props.loadingsBtn.includes(btnConfig.field)" 
               :type="btnConfig.btnStyle || 'primary'" 
               :icon="btnConfig.icon" 
-              :size="'medium'"
+              :size="btnConfig.size || 'medium'"
+              :disabled="(btnConfig.type === 'del' && !selectedRows.length)"
               @click="btnClick(btnConfig, index)"
             >{{btnConfig.label}}</el-button> 
         </el-row>
@@ -33,7 +38,7 @@
         <el-table header-row-class-name="table-header" header-cell-class-name="table-header-th"
           class="ele-table" 
             v-loading="loading"
-          :border="qnnTableBorder === false ? false : true"
+          :border="qnnTableBorder || false"
           :row-key="rowKey" :data="tableData"
           :stripe="true"
           @selection-change="selectedRowsChange" 
@@ -112,15 +117,19 @@
                             >{{btnConfig.label}}</el-button>
                     </span> 
                  </span> 
-                <span v-else> 
+                <span v-else v-html="!colConfig.formatter ? 
+                        scope.row[colConfig.field] : 
+                        ((typeof colConfig.formatter) === 'string') ? 
+                        $moment(scope.row[colConfig.field]).format(colConfig.formatter) :
+                        colConfig.formatter(scope.row)"> 
                     <!-- 有的数据需要 formatter -->
-                    {{
+                    <!-- {{
                         !colConfig.formatter ? 
                         scope.row[colConfig.field] : 
                         ((typeof colConfig.formatter) === 'string') ? 
                         $moment(scope.row[colConfig.field]).format(colConfig.formatter) :
                         colConfig.formatter(scope.row)
-                    }} 
+                    }}  -->
                 </span> 
               </template>
             </el-table-column> 
@@ -145,9 +154,7 @@ import { BtnInfo, RowData, FormFieldConfig, TableFieldConfig } from "../interfac
 
 interface QnnFormOption {
     props: any,
-    components:{
-        QnnForm:any
-    },
+    components:any,
     data():{ },
     methods:{ },
     mounted():void
@@ -166,7 +173,7 @@ const option:QnnFormOption = {
       isShowRowSelect:Boolean
     },
     components:{
-        QnnForm
+      "qnn-form":QnnForm
     },
     data(){
         const qnnTableActionBtns:TableFieldConfig[] = (this as any).$cloneDeep(this.$props.actionBtns);
@@ -221,30 +228,36 @@ const option:QnnFormOption = {
           const _otherParams = typeof otherParams === 'function' ? otherParams({ qnnForm:this }) : otherParams; 
  
           const body = {
-            ...params,
             ...this.$refs?.searchRef?.getValues?.(),
-            limit: this.pageSize,
-            page: this.currentPage,
-            sortField:this.sortField,
-            sortOrder:this.sortOrder, // ascending 升序 | descending 降序
-            ..._otherParams
+            "pageIndex": this.currentPage,
+            "pageSize": this.pageSize,
+            "orderBy": this.sortField,
+            "param":{
+              ...params,
+              ..._otherParams
+            }
+            // limit: this.pageSize,
+            // page: this.currentPage,
+            // sortField:this.sortField,
+            // sortOrder:this.sortOrder, // ascending 升序 | descending 降序
+            // ..._otherParams
           };
-          console.log('请求数据：', body)
+          // console.log('请求数据：', body)
           if(!apiName)return;
 
-          // const _this = this; 
-            // _this.loading = true;
-            // const { data, success, message } = await this.$myFetch({
-            //     apiName:"apiName",
-            //     params:body, 
-            // });
-            //  _this.loading = false;
-            // if(success){
-            //         _this.tableData = formatData ? formatData(data) : data;
-            //         _this.totalNumber = totalNumber;
-            // }else{
-            //     _this.$message({  message: message, type: 'warning'  }); 
-            // }
+          const _this = this; 
+          _this.loading = true;
+          const { data, success, message, totalNumber } = await this.$myFetch({
+              apiName:apiName,
+              params:body, 
+          });
+          _this.loading = false;
+          if(success){
+              _this.tableData = formatData ? formatData(data) : data;
+              _this.totalNumber = totalNumber;
+          }else{
+              _this.$message.error(message);
+          }
  
         },
 
@@ -298,6 +311,37 @@ const option:QnnFormOption = {
 }
 export default option;
 </script>
-<style lang="less" scoped src="../style/qnn-table.less">
+<style lang="less" scoped src="../style/qnn-table.less"></style>
+
+<style lang="less"> 
+.search-container {
+  .qnn-form-content{  
+      padding-right:0px !important; 
+  }
+  .query { 
+    .button{
+        padding: 4px 12px;
+        span{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: rgba(30, 35, 61, 1);
+            .icon{
+                width: 22px;
+                height: 22px; 
+                padding-right: 6px;
+            }
+            span{ 
+                border-left: 1px solid rgba(135, 139, 146, 0.2);
+                padding-left: 6px;
+            }
+        }
+        
+       
+    }
+}
+}
+
 
 </style>

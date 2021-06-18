@@ -2,71 +2,73 @@
 @gray2: rgb(84, 92, 100);
 @block: rgba(45, 58, 75, 1);
 @white: #fff;
-@blue: #409eff;
+@blue: #008dd0;
 @qing: #40c9c6;
-@green: #67C23A;
-@red: #F56C6C;
-@yellow: #E6A23C;
+@green: #67c23a;
+@red: #f1584c;
+@yellow: #e6a23c;
 @violet: rgb(182, 162, 222);
 @bg: #f0efef;
 
-
 .t-blue {
-    color: @blue
+	color: @blue;
 }
 
 .t-qing {
-    color: @qing
+	color: @qing;
 }
 
 .t-green {
-    color: @green
+	color: @green;
 }
 
 .t-red {
-    color: @red
+	color: @red;
 }
 
 .t-yellow {
-    color: @yellow
+	color: @yellow;
 }
 
 .t-violet {
-    color: @violet
+	color: @violet;
 }
 
 .qnn-table {
-    .el-table {
-        width: 100%; 
-    }
-    .btn-item{
-        border-right: 1px solid fade(@gray, 10);
-        padding:0 6px;
-        &:nth-first-child(1){ 
-            padding-left: 0px;
-        }
-        &:nth-last-child(1){
-            border-right: none;
-            padding-right: 0px;
-        }
-    }
+	.el-table {
+		width: 100%;
+	}
+	.btn-item {
+		border-right: 1px solid fade(@gray, 10);
+		padding: 0 6px;
+		&:nth-first-child(1) {
+			padding-left: 0px;
+		}
+		&:nth-last-child(1) {
+			border-right: none;
+			padding-right: 0px;
+		}
+	}
 
-    .pagination {
-        padding: 12px 0px;
-        text-align: right;
-    }
+	.pagination {
+		padding: 12px 0px;
+		text-align: right;
+	}
 
-    .search-container {
-        background: @bg;
-        padding: 12px;
-        margin-bottom: 12px;
+	.search-container {
+		// background: @bg;
+		// padding: 12px;
+		border-bottom: 1px solid rgba(203, 205, 217, 0.377);
+		padding-bottom: 22px;
+		margin-bottom: 22px;
 
-        .query {
-            width: 100%;
-            display: block;
-            text-align: right;
-            margin-bottom: 0px;
-        }
-    }
-
+		.query {
+			width: 100%;
+			display: block;
+			margin-bottom: 0px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
 }

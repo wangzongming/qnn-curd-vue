@@ -28,7 +28,7 @@ export default {
             dir: "dist/es",
             format: 'esm',
             // sourcemap: !production,
-            sourcemap: false,
+            // sourcemap: true,
             exports: "named", 
         }
     ],
@@ -136,7 +136,7 @@ export default {
         }),
 
         //生成d.ts文件
-        emitDeclaration(),
+        // emitDeclaration(),
         // production && terser()
     ]
 }

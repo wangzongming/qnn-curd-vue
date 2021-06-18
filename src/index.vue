@@ -1,5 +1,5 @@
 <template>
-<div class="qnnCurd">
+<div class="qnnCurd">  
     <!-- 表格视图 -->
     <div v-if="view === 'table'">
         <QnnTable  
@@ -10,7 +10,7 @@
           :formatData="$props.formatData"
           :data="$props.data"  
           :isShowRowSelect="$props.isShowRowSelect"
-          :border="true"
+          :border="false"
           :getSearchField="getSearchField"
           @clearSelectedRows="clearSelectedRows"
           @btnClick="btnClick"
@@ -19,18 +19,25 @@
     </div>
 
     <!-- 表单视图 -->
-    <div v-if="view === 'form'">
+    <div v-if="view === 'form'" style="height:100%">
       <QnnForm 
         :formFields="qnnFormFields"
         :curClickBtn="curClickBtn"
         :loadingsBtn="loadingsBtn"
         :disabeld="formDisabeld"
         :curClickRowData="curClickRowData"
+        :noFiles="$props.noFiles"
+        :attachmentsList="$props.attachmentsList"
+        :btnsPosition="$props.btnsPosition"
         @refresh="refresh" 
         @clearSelectedRows="clearSelectedRows"
         @btnClick="btnClick"
         ref="qnnForm"
-      />
+      >
+        <template #attachmentsList>
+          <slot name="attachmentsList"></slot> 
+        </template>
+      </QnnForm>
     </div>
 
     <!-- 数据修改记录 -->  
@@ -72,9 +79,7 @@
         @btnClick="btnClick"
         ref="auditRef"
       /> 
-    </el-dialog>
-
-
+    </el-dialog> 
 </div>
 </template>
 
@@ -97,7 +102,10 @@ export default {
       rowKey:String,
       formatData: Function, 
       border:Boolean,
-      isShowRowSelect:Boolean
+      isShowRowSelect:Boolean,
+      noFiles:Boolean,
+      attachmentsList:Object,
+      btnsPosition:String
     },
     data() {   
         const qnnFormFields:FormFieldConfig[] = (this as any).$cloneDeep(this.$props.formFields); 
@@ -111,6 +119,12 @@ export default {
               btnStyle:"primary",
               icon:"el-icon-plus",
               formBtns:[ 
+                {
+                    field: "cancel",
+                    label: "关闭",
+                    type: "cancel",
+                    btnStyle: "default",
+                },
                 {  
                   label:"新增",
                   type:"submit", 
@@ -126,7 +140,7 @@ export default {
             /**
              * 当前视图: "table" | "form"
              */
-            view: "form", 
+            view: "table", 
 
             /**
              * 当前正在 loading 的按钮
@@ -252,12 +266,11 @@ export default {
         changeView(view: "table" | "form"): void {
             this.view = view;
             this.refresh();
-        },
+        }, 
 
-       
         // 操作按钮、单元格类的按钮、表单中的按钮 点击监听
-       async btnClick(btnInfo:BtnInfo, index:number, rowData?:RowData) { 
-          const { type, onClick, field, targetUrl } = btnInfo;
+       async btnClick(btnInfo:BtnInfo, index:number, rowData?:RowData) {  
+          const { type, onClick, field, targetUrl } = this.$cloneDeep(btnInfo);
           this.curClickBtn = btnInfo;
           switch(type){
             case "add":
@@ -278,7 +291,7 @@ export default {
               this.view = "form";
               break; 
             case "history":
-              console.log('历史修改记录')
+              // console.log('历史修改记录')
               this.fileHistory(rowData);
               break;  
             case "download": 
@@ -291,9 +304,21 @@ export default {
               break;  
             case "import":
               this.importModal =  true;
-              this.importFormField = btnInfo.formFields;
-              this.importFormBtns = btnInfo.formBtns;
-              console.log('btnInfo', btnInfo)
+              this.importFormField = btnInfo.formFields.map(item=>{
+                const newItem = this.$cloneDeep(item);
+                const cb = newItem.uploadedCb;
+                if(newItem.type === 'files'){ 
+                  newItem.uploadedCb = (arg:any)=>{
+                      this.importModal =  false;
+                      this.refresh();  
+                      cb && cb(arg);
+                  }
+                }
+                return {
+                  ...newItem, 
+                }
+              });
+              this.importFormBtns = btnInfo.formBtns; 
               break; 
             case "submit": 
               this.submitFn(btnInfo); 
@@ -310,7 +335,7 @@ export default {
               this.auditFormBtns = btnInfo.formBtns; 
               break;  
             case "auditHistory":  
-                console.log('审核记录')
+                // console.log('审核记录')
                 // 文件历史记录弹出窗
                 this.historyTitle = '审核记录';
                 // 当前查看历史记录的文件
@@ -345,9 +370,8 @@ export default {
               this.formDisabeld = false;
               this.curClickRowData = rowData;
               break; 
-            case "custom":
-              console.log('自定义')
-              onClick && onClick();
+            case "custom": 
+              onClick && onClick({btnInfo, index, rowData});
               break;
           }
 
@@ -409,32 +433,39 @@ export default {
         },
 
         // 删除数据
-        async delFn({ field }:BtnInfo){
+        async delFn({ field, fetchConfig }:BtnInfo){
           this.addLoadingBtn(field);
-          console.log('删除数据：', this.$refs.qnnTable.getSelectedRows()) // getSelectedRowd
+          // console.log('删除数据：', this.$refs.qnnTable.$refs.basicTable.getSelectedRows()) // getSelectedRowd
+          // console.log('删除数据：', this.$refs.qnnTable.getSelectedRows()) // getSelectedRowd
           const { success, message } = await this.$myFetch({
-              apiName:"apiName",
-                params:this.$refs.qnnTable.getSelectedRows(),
+              apiName:fetchConfig?.apiName,
+              params:this.$refs.qnnTable.getSelectedRows(),
           });
           this.removeLoadingBtn(field);
           if(success){
             this.$message({  message: message, type: 'success'  });
             this.refresh(); 
           }else{
-              this.$message({  message: message, type: 'warning'  }); 
+            this.$message.error(message);
           }  
         },
 
         // 提交数据
-        async submitFn({ field, fetchConfig}:BtnInfo){ 
+        async submitFn({ field, fetchConfig, filesForm}:BtnInfo){ 
           const { apiName, otherParams } = (fetchConfig || {});
           const _otherParams = typeof otherParams === 'function' ? otherParams({ qnnForm:this }) : otherParams; 
-          const values = await this.$refs.qnnForm.getValues(true);
+         
+          // 除了有个普通增删改的表单外，还有一个附件表单也会走这个方法
+          // filesForm
+          //  console.log("submitFn")
+          // const $ref = filesForm ? this.$refs.qnnForm.$refs.basicForm.$refs.filesTable : this.$refs.qnnForm.$refs.basicForm;
+          const $ref = this.$refs.qnnForm; 
+          const values = await $ref.getValues(true);
           const body = {
             ..._otherParams,
             ...values
           }
-          console.log('body:', body);
+          // console.log('body:', body);
           if(!apiName) return;
           this.addLoadingBtn(field);  
           let { success, message } = await this.$myFetch({
@@ -446,29 +477,41 @@ export default {
               this.$message({  message: message, type: 'success'  });
               this.view = "table";
               this.refresh(); 
-          }else{
-              this.$message({  message: message, type: 'warning'  }); 
+          }else{ 
+             this.$message.error(message);
           }
         },
 
         // 导出数据
-        async exportFn({ field, fetchConfig }:BtnInfo){ 
-          //  console.log('export')
+        async exportFn({ field, fetchConfig }:BtnInfo){  
           this.addLoadingBtn(field);   
-          const { data, success, message } = await this.$myFetch({
-            apiName:fetchConfig.apiName,
-            params:{
-              selectedRows: this.$refs.qnnTable.getSelectedRows(),
-              otherParams: fetchConfig.otherParams
-            }, 
+          await this.$download({
+              apiName:fetchConfig.apiName,
+              params:{  
+                ...this.$refs.qnnTable.$refs?.searchRef?.getValues?.(),
+                ...fetchConfig.otherParams
+              }, 
           });
           this.removeLoadingBtn(field);
-          if(success){
-            window.location.href = data;
-            this.$message({  message: message, type: 'success'  });  
-          }else{
-              this.$message({  message: message, type: 'warning'  }); 
-          }
+
+        // const { data, success, message } = await this.$myFetch({
+        //     apiName:fetchConfig.apiName,
+        //     params:{ 
+        //       // selectedRows: this.$refs.qnnTable.getSelectedRows(),
+        //       // otherParams: fetchConfig.otherParams 
+        //       ...this.$refs.qnnTable.$refs?.searchRef?.getValues?.(),
+        //       ...fetchConfig.otherParams
+        //     }, 
+        //   });
+        //   this.removeLoadingBtn(field);
+        //   if(success){
+        //     // window.location.href = data;
+        //     // this.$message({  message: message, type: 'success'  });  
+        //     console.log(data)
+
+        //   }else{
+        //      this.$message.error(message);
+        //   }
         },
  
         // 提交通过
@@ -480,7 +523,7 @@ export default {
             ..._otherParams,
             ...this.$refs.auditRef.getValues()
           }
-          console.log('body:', body);
+          // console.log('body:', body);
           if(!apiName) return;
           this.addLoadingBtn(field);  
           let { success, message } = await this.$myFetch({
@@ -493,7 +536,7 @@ export default {
               this.view = "table";
               this.refresh(); 
           }else{
-              this.$message({  message: message, type: 'warning'  }); 
+             this.$message.error(message);
           }
         },
 
@@ -502,18 +545,53 @@ export default {
 </script>
 
 <style lang="less">
+@red: #F1584C;
+@blue: #008DD0;
+.qnnCurd{ 
+    height: 100%;
+    // border: 1px solid rgb(43, 255, 0);
+    // overflow-y: auto;
+    overflow-y: hidden;
+    box-sizing: border-box;
+    // position: relative;
+
+    .el-table thead{
+      color: #A7B2C6;
+    }
+    .el-table .cell{ 
+		  font-family: PingFangSC-Medium, PingFang SC;
+      color: #1E233D;
+
+    }
+    
+
+    .el-button--primary.is-plain{
+      color: rgba(253, 245, 245, 0.726);
+      border: 1px solid @blue;
+      border-left: 1px solid #ccc;
+    }
+}
 // 全局样式，局部样式无法更改一些饿了么ui的属性
 .qnnCurd .table-header-th {
-    background-color: rgba(184, 187, 190, 0.103);
+    // background-color: rgba(184, 187, 190, 0.103);
+    background-color:  #F4F8FF;
+}
+.qnnCurd .el-table--striped .el-table__body tr.el-table__row--striped td{
+    background-color:  #F4F8FF; 
+}
+.qnnCurd .el-checkbox__input.is-checked .el-checkbox__inner, 
+.qnnCurd .el-checkbox__input.is-indeterminate .el-checkbox__inner{
+  background-color:@red;
+  border-color:@red;
 }
 .qnn-form .el-input__inner{
     text-align: left;
 }
 .msg-loading{
-  color: #409eff;
+  color: @blue;
 }
 .msg-loading-text{ 
-  color: #409eff;
+  color: @blue;
   margin-left: 6px;
 }
 </style>

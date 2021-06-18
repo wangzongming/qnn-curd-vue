@@ -27,7 +27,9 @@ export type FormFieldType =
     "checkbox" | "date" | "year" | "month" |
      "dates" | "week" |  "datetime" | "datetimerange" | 
      "daterange" | "monthrange" | "datetime" | "select" | 
-     "files" | "custom" | "cascader";
+     "files" | "custom" | "cascader" | "phone" | "email" |
+     "identity" | "postalCode" | "specialPlane" | "integer" | 
+     "float" | "url";
 
 export type BtnType = "add" | "del" | "detail" | "submit" | 
                 "cancel" | "edit" | "history" | "download" | 
@@ -55,7 +57,10 @@ export type BtnInfo = {
     formFields?: FormFieldConfig[],
     fetchConfig?: FetchConfig,
     targetUrl?: string,
-    onClick?: (arg?: Arg) => void
+    onClick?: (arg?: Arg) => void,
+
+    // 有一个普通表单和一个附件表单，这个flag用于区分是哪个表单上面点击的
+    filesForm?:boolean,
 }
 
 export interface FormFieldConfig {
@@ -67,6 +72,7 @@ export interface FormFieldConfig {
     optnionConfig?: KVConfig;
     fetchConfig?: FetchConfig;
     required?:boolean;
+    uploadedCb?:(arg:any)=>void;
 
     /**
      * 最多上传文件数量
